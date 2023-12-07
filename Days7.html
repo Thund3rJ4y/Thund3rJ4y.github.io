@@ -47,11 +47,15 @@ QQQJA 483
       if (sortedUnique.length === 1) return 'Five of a kind';
       if (sortedUnique.length === 2) {
         if (sortedUnique[0] === 4 || sortedUnique[1] === 4) return 'Four of a kind';
-        if (sortedUnique[0] === 3 || sortedUnique[1] === 3) return 'Full house';
+        if (sortedUnique[0] === 3 || sortedUnique[1] === 3) {
+          if (sortedUnique.includes(2)) return 'Full house';
+          return 'Three of a kind';
+        }
         return 'Two pair';
       }
       if (sortedUnique.length === 3) {
         if (sortedUnique[0] === 3) return 'Three of a kind';
+        if (sortedUnique[0] === 2 && sortedUnique[1] === 2) return 'Two pair';
         return 'One pair';
       }
       return 'High card';
@@ -78,17 +82,43 @@ QQQJA 483
         const valuesA = a.carte.slice(0, -4).split('').map(card => valuesMap[card] || parseInt(card));
         const valuesB = b.carte.slice(0, -4).split('').map(card => valuesMap[card] || parseInt(card));
 
-        for (let i = 0; i < valuesA.length; i++) {
-          if (valuesA[i] !== valuesB[i]) {
-            return valuesB[i] - valuesA[i];
+        const nonConsecutive = !valuesA.every((val, i) => val === valuesB[i]);
+
+        if (nonConsecutive) {
+          valuesA.sort((x, y) => y - x);
+          valuesB.sort((x, y) => y - x);
+          for (let i = 0; i < valuesA.length; i++) {
+            if (valuesA[i] !== valuesB[i]) {
+              return valuesB[i] - valuesA[i];
+            }
+          }
+        } else {
+          for (let i = 0; i < valuesA.length; i++) {
+            if (valuesA[i] !== valuesB[i]) {
+              return valuesB[i] - valuesA[i];
+            }
           }
         }
 
-        const pairsA = trouverPairs(valuesA);
-        const pairsB = trouverPairs(valuesB);
+        const pairsA = trouverPaires(valuesA);
+        const pairsB = trouverPaires(valuesB);
 
         if (pairsA !== pairsB) {
           return pairsB - pairsA;
+        }
+
+        const triplesA = trouverTriples(valuesA);
+        const triplesB = trouverTriples(valuesB);
+
+        if (triplesA !== triplesB) {
+          return triplesB - triplesA;
+        }
+
+        const quadruplesA = trouverQuadruples(valuesA);
+        const quadruplesB = trouverQuadruples(valuesB);
+
+        if (quadruplesA !== quadruplesB) {
+          return quadruplesB - quadruplesA;
         }
 
         const suitesA = trouverSuites(valuesA);
@@ -98,6 +128,27 @@ QQQJA 483
           return suitesB - suitesA;
         }
 
+        const suiteTripleA = trouverSuiteTriple(valuesA, pairsA);
+        const suiteTripleB = trouverSuiteTriple(valuesB, pairsB);
+
+        if (suiteTripleA !== suiteTripleB) {
+          return suiteTripleB - suiteTripleA;
+        }
+
+        const suiteQuadrupleA = trouverSuiteQuadruple(valuesA);
+        const suiteQuadrupleB = trouverSuiteQuadruple(valuesB);
+
+        if (suiteQuadrupleA !== suiteQuadrupleB) {
+          return suiteQuadrupleB - suiteQuadrupleA;
+        }
+
+        const suiteQuintupleA = trouverSuiteQuintuple(valuesA);
+        const suiteQuintupleB = trouverSuiteQuintuple(valuesB);
+
+        if (suiteQuintupleA !== suiteQuintupleB) {
+          return suiteQuintupleB - suiteQuintupleA;
+        }
+
         return 0;
       });
 
@@ -105,7 +156,7 @@ QQQJA 483
       return orderedRanks;
     }
 
-    function trouverPairs(values) {
+    function trouverPaires(values) {
       const valueCount = {};
       for (const value of values) {
         valueCount[value] = (valueCount[value] || 0) + 1;
@@ -122,6 +173,36 @@ QQQJA 483
       return pairs[0];
     }
 
+    function trouverTriples(values) {
+      const valueCount = {};
+      for (const value of values) {
+        valueCount[value] = (valueCount[value] || 0) + 1;
+      }
+
+      for (const value in valueCount) {
+        if (valueCount[value] === 3) {
+          return parseInt(value);
+        }
+      }
+
+      return 0;
+    }
+
+    function trouverQuadruples(values) {
+      const valueCount = {};
+      for (const value of values) {
+        valueCount[value] = (valueCount[value] || 0) + 1;
+      }
+
+      for (const value in valueCount) {
+        if (valueCount[value] === 4) {
+          return parseInt(value);
+        }
+      }
+
+      return 0;
+    }
+
     function trouverSuites(values) {
       values.sort((a, b) => b - a);
 
@@ -132,6 +213,78 @@ QQQJA 483
       }
 
       return values[0];
+    }
+
+    function trouverSuiteTriple(values, pair) {
+      values.sort((a, b) => b - a);
+
+      let count = 0;
+      let lastVal = 0;
+
+      for (let i = 0; i < values.length; i++) {
+        if (values[i] === pair && lastVal !== pair) {
+          count++;
+          lastVal = pair;
+        } else if (lastVal !== values[i] + 1) {
+          count = 0;
+          lastVal = values[i];
+        } else {
+          count++;
+          lastVal = values[i];
+        }
+
+        if (count === 3) {
+          return values[i];
+        }
+      }
+
+      return 0;
+    }
+
+    function trouverSuiteQuadruple(values) {
+      values.sort((a, b) => b - a);
+
+      let count = 0;
+      let lastVal = 0;
+
+      for (let i = 0; i < values.length; i++) {
+        if (lastVal !== values[i] + 1) {
+          count = 0;
+          lastVal = values[i];
+        } else {
+          count++;
+          lastVal = values[i];
+        }
+
+        if (count === 4) {
+          return values[i];
+        }
+      }
+
+      return 0;
+    }
+
+    function trouverSuiteQuintuple(values) {
+      values.sort((a, b) => b - a);
+
+      let count = 0;
+      let lastVal = 0;
+
+      for (let i = 0; i < values.length; i++) {
+        if (lastVal !== values[i] + 1) {
+          count = 0;
+          lastVal = values[i];
+        } else {
+          count++;
+          lastVal = values[i];
+        }
+
+        if (count === 5) {
+          return values[i];
+        }
+      }
+
+      return 0;
     }
 
     function calculerGainsParCarte(cartes, rangs) {
