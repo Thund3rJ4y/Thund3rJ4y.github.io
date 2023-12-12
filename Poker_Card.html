@@ -74,7 +74,6 @@
 
   <button onclick="deal()">Deal Cards</button>
   <button onclick="addCard()">Add Card</button>
-  <button onclick="bet()">Bet</button>
   <input type="text" id="gains" placeholder="Enter gains">
   <label id="gains-label"></label>
 
@@ -100,7 +99,7 @@
         gamblerHand.appendChild(createCardElement(cards.pop()));
       }
 
-      let seconds = 10;
+      let seconds = 5;
       timer = setInterval(() => {
         document.getElementById('gains-label').textContent = `Timer: ${seconds}s`;
         seconds--;
@@ -111,9 +110,25 @@
           determineWinner();
         }
       }, 1000);
-  // Réinitialisation du résultat
-  document.getElementById('result').textContent = '';
+
+      lastBet = 10; // Mettre la dernière mise par défaut à 10 pour chaque nouvelle main
+
+      // Logique de pari
+      const chipsDifference = lastBet * 2; // Calculer la différence en jetons
+      player1Chips -= chipsDifference;
+      gamblerChips -= chipsDifference;
+
+      const player1ChipsDisplay = document.getElementById('player1-chips');
+      const gamblerChipsDisplay = document.getElementById('gambler-chips');
+
+      player1ChipsDisplay.textContent = player1Chips;
+      gamblerChipsDisplay.textContent = gamblerChips;
+
+      saveGains(); // Sauvegarder les jetons et les gains
+
+      document.getElementById('result').textContent = ''; // Réinitialiser le résultat
     }
+
 
     function addCard() {
       const cards = getShuffledDeck();
@@ -162,26 +177,6 @@
         default:
           return '';
       }
-    }
-
-    function bet() {
-      const gainsInput = document.getElementById('gains');
-      const gains = parseInt(gainsInput.value) || 10;
-
-      if (player1Chips >= gains && gamblerChips >= gains) {
-        player1Chips -= gains;
-        gamblerChips -= gains;
-
-        const player1ChipsDisplay = document.getElementById('player1-chips');
-        const gamblerChipsDisplay = document.getElementById('gambler-chips');
-
-        player1ChipsDisplay.textContent = player1Chips;
-        gamblerChipsDisplay.textContent = gamblerChips;
-      } else {
-        alert('Not enough chips to make the bet.');
-      }
-
-      gainsInput.value = '';
     }
 
 function determineWinner() {
@@ -399,8 +394,10 @@ function getShuffledDeck() {
   const deck = [];
 
   for (const rank of ranks) {
-    for (const suit of suits) {
-      deck.push(rank + suit);
+    if (rank !== 'A') { // Exclure la carte avec une valeur de 1
+      for (const suit of suits) {
+        deck.push(rank + suit);
+      }
     }
   }
 
@@ -411,6 +408,7 @@ function getShuffledDeck() {
 
   return deck;
 }
+
 
 function getCardValue(cardElement) {
   const cardText = cardElement.querySelector('.card-text').textContent;
@@ -424,15 +422,42 @@ function updateChipsDisplay() {
 }
 
 function saveGains() {
-  const gainsInput = document.getElementById('gains').value || '10';
+  const gainsInput = document.getElementById('gains');
+  let newGains = parseInt(gainsInput.value);
+
+  if (isNaN(newGains) || newGains < 10) {
+    newGains = 10;
+    gainsInput.value = newGains;
+  }
+
+  if (newGains !== parseInt(gains)) {
+    gains = newGains;
+    const chipsDifference = (newGains - parseInt(gains)) * 2; // Calculer la différence en jetons
+
+    if (player1Chips >= chipsDifference && gamblerChips >= chipsDifference) {
+      player1Chips -= chipsDifference;
+      gamblerChips -= chipsDifference;
+
+      const player1ChipsDisplay = document.getElementById('player1-chips');
+      const gamblerChipsDisplay = document.getElementById('gambler-chips');
+
+      player1ChipsDisplay.textContent = player1Chips;
+      gamblerChipsDisplay.textContent = gamblerChips;
+    } else {
+      alert('Not enough chips to make the bet.');
+      gainsInput.value = gains; // Restaurer la valeur précédente si les jetons sont insuffisants
+    }
+  }
+
   gainsHistory = {
     player1: player1Chips,
     gambler: gamblerChips,
-    lastGain: gainsInput
+    lastGain: gains
   };
 
   localStorage.setItem('gainsHistory', JSON.stringify(gainsHistory));
 }
+
 
 function loadGains() {
   const savedGains = localStorage.getItem('gainsHistory');
@@ -440,9 +465,16 @@ function loadGains() {
     gainsHistory = JSON.parse(savedGains);
     player1Chips = gainsHistory.player1 || 2000;
     gamblerChips = gainsHistory.gambler || 2000;
+    const lastGain = gainsHistory.lastGain || 10; // Par défaut, 10 s'il n'y a pas de dernière valeur enregistrée
+    document.getElementById('gains').value = lastGain; // Initialise avec la dernière valeur enregistrée
+  } else {
+    player1Chips = 10;
+    gamblerChips = 10;
+    document.getElementById('gains').value = 10; // Initialise à 10 si aucune donnée n'est enregistrée
   }
   updateChipsDisplay();
 }
+
 
 loadGains();
   </script>
