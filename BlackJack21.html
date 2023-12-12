@@ -102,14 +102,21 @@
 
         clearHand('player1');
         clearHand('gambler');
-
+clearResults();
         drawCard('player1');
         drawCard('gambler');
         drawCard('player1');
         drawCard('gambler', true);
 
         gameInProgress = true;
-        updateChipsDisplay();
+
+    const betAmount = parseInt(document.getElementById('bet').value) || 10;
+    // Soustraire le montant de la mise du gain total
+    updateGains(); // Mettre à jour les gains après avoir diminué le montant de la mise
+    player1Chips -= betAmount;
+    gamblerChips -= betAmount;
+    updateGains(); // Mettre à jour les gains après avoir diminué le montant de la mise
+         updateChipsDisplay();
       }
     }
 
@@ -117,8 +124,11 @@
       const handDiv = document.querySelector(`#${player} .hand`);
       handDiv.innerHTML = '';
     }
-
-    function hit() {
+function clearResults() {
+  document.getElementById('result').textContent = '';
+  document.getElementById('player1-result').textContent = '';
+  document.getElementById('gambler-result').textContent = '';
+}    function hit() {
       if (gameInProgress) {
         drawCard('player1');
         checkPlayerStatus();
@@ -189,8 +199,8 @@
         cardText.textContent = 'Back';
         cardSuit.textContent = '⬜';
       } else {
-        cardText.textContent = card.charAt(0);
-        cardSuit.innerHTML = getSuitSymbol(card.charAt(1));
+  cardText.textContent = card.substring(0, card.length - 1);
+  cardSuit.innerHTML = getSuitSymbol(card.charAt(card.length - 1));
       }
 
       cardContent.appendChild(cardText);
@@ -228,7 +238,6 @@
       const player1Total = calculateHandValue(player1Hand);
       const gamblerTotal = calculateHandValue(gamblerHand);
       const betAmount = parseInt(document.getElementById('bet').value) || 10;
-
       if (player1Total > 21) {
         document.getElementById('player1-result').textContent = 'Player Busts! Dealer wins.';
         gamblerChips += betAmount;
@@ -247,7 +256,32 @@
         document.getElementById('gambler-result').textContent = 'Dealer wins!';
         gamblerChips += betAmount;
       }
+updateGains();
     }
+
+window.onload = function() {
+  loadGains();
+};
+
+// Fonction pour mettre à jour les gains dans le localStorage
+function updateGains() {
+  const gains = {
+    player1: player1Chips,
+    gambler: gamblerChips
+  };
+  localStorage.setItem('gains', JSON.stringify(gains));
+}
+
+// Fonction pour charger les gains depuis le localStorage
+function loadGains() {
+  const savedGains = localStorage.getItem('gains');
+  if (savedGains) {
+    const parsedGains = JSON.parse(savedGains);
+    player1Chips = parsedGains.player1;
+    gamblerChips = parsedGains.gambler;
+    updateChipsDisplay();
+  }
+}
 
     function calculateHandValue(hand) {
       let total = 0;
