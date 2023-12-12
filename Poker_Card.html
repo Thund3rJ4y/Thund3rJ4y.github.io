@@ -138,8 +138,8 @@
         cardText.textContent = 'Back';
         cardSuit.textContent = '⬜';
       } else {
-        cardText.textContent = card.charAt(0);
-        cardSuit.innerHTML = getSuitSymbol(card.charAt(1));
+	cardText.textContent = card.substring(0, card.length - 1);
+  	cardSuit.innerHTML = getSuitSymbol(card.charAt(card.length - 1));
       }
 
       cardContent.appendChild(cardText);
